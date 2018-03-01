@@ -11,6 +11,7 @@
     ],
     "require": {
       "symfony/console": "~2.6.0||~2.8.0",
+      "symfony/finder": "~2.5.0||~2.7.0||~3.0.0",
       "symfony/process": "*"
     },
     "autoload": {

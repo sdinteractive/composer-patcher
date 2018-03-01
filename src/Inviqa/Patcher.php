@@ -2,14 +2,14 @@
 
 namespace Inviqa;
 
-use Inviqa\Patch\Factory;
 use Inviqa\Patch\Patch;
 use Symfony\Component\Console\Output\ConsoleOutput;
+use Symfony\Component\Finder\Finder;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Patcher
 {
-    const EXTRA_KEY_MAGE_ROOT_DIR = 'magento-root-dir';
+    const PATCH_DIRECTORY = 'composer-patches';
 
     /** @var ConsoleOutput */
     private $output;
@@ -17,36 +17,27 @@ class Patcher
     /** @var \Composer\Script\Event  */
     private $event;
 
+    /**
+     * @param \Composer\Script\Event $event
+     * @return void
+     */
     public function patch(\Composer\Script\Event $event)
     {
         $this->init($event);
 
-        $extraTmp = $extra = $this->event->getComposer()->getPackage()->getExtra();
+        $finder = new Finder();
+        $finder->files()->name('*.patch')->in(self::PATCH_DIRECTORY);
 
-        if (empty($extra['patches'])) {
-            $this->output->writeln('<info>No Magento patches were found</info>');
-            return;
-        }
-
-        // don't pass the patch information
-        unset($extraTmp['patches']);
-
-        foreach ($extra['patches'] as $patchGroupName => $patchGroup) {
-            foreach ($patchGroup as $patchName => $patchDetails) {
-                $patch = Factory::create(
-                    $patchName,
-                    $patchGroupName,
-                    $patchDetails,
-                    $extraTmp
-                );
-                $patch->setOutput($this->output);
-                $this->applyPatch($patch);
-            }
+        foreach ($finder as $patchFile) {
+            $patch = new Patch($patchFile);
+            $patch->setOutput($this->output);
+            $this->applyPatch($patch);
         }
     }
 
     /**
      * @param \Composer\Script\Event $event
+     * @return void
      */
     private function init(\Composer\Script\Event $event)
     {
@@ -57,11 +48,12 @@ class Patcher
         }
 
         $this->event  = $event;
-
-        $checker = new EnvChecker($event);
-        $checker->check();
     }
 
+    /**
+     * @param Patch $patch
+     * @return void
+     */
     private function applyPatch(Patch $patch)
     {
         try {

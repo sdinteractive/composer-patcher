@@ -4,208 +4,79 @@ namespace Inviqa\Patch;
 
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\Output;
+use Symfony\Component\Process\Process;
+use Symfony\Component\Process\ProcessUtils;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Finder\SplFileInfo;
 
-abstract class Patch
+class Patch
 {
-    private $group;
-
-    private $name;
-
-    private $title;
-
-    private $description;
-
-    private $url;
-
-    private $tempPatchFilePath;
+    /**
+     * @var SplFileInfo
+     */
+    private $fileInfo;
 
     /**
      * @var Output
      */
     private $output;
 
-    private $log;
-
     /**
-     * @var array
+     * Patch constructor.
+     * @param SplFileInfo $fileInfo
      */
-    private $composerExtra = array();
-
-    /**
-     * @return boolean
-     */
-    abstract protected function doApply();
-
-    /**
-     * @return boolean
-     */
-    abstract protected function canApply();
-
-    public function __construct($name, $group, array $details, array $composerExtra)
+    public function __construct(SplFileInfo $fileInfo)
     {
-        $this->setName($name);
-        $this->setGroup($group);
-        $this->setComposerExtra($composerExtra);
-
-        if (!empty($details['url'])) {
-            $this->setUrl($details['url']);
-        }
+        $this->fileInfo = $fileInfo;
     }
 
     /**
      * @return boolean|null
      * @throws \Exception
      */
-    public final function apply()
+    final public function apply()
     {
-        $namespace = $this->getNamespace();
         if ($this->canApply()) {
-            $this->beforeApply();
-            $res = (bool) $this->doApply();
+            $res = (bool)$this->doApply();
 
             if ($res) {
-                $this->getOutput()->writeln("<info>Patch $namespace successfully applied.</info>");
+                $this->getOutput()->writeln("<info>Patch {$this->fileInfo->getFilename()} successfully applied.</info>");
             } else {
-                $this->getOutput()->writeln("<comment>Patch $namespace was not applied.</comment>");
+                $this->getOutput()->writeln("<comment>Patch {$this->fileInfo->getFilename()} was not applied.</comment>");
             }
-
-            $this->afterApply($res);
 
             return $res;
         }
-        $this->getOutput()->writeln("<comment>Patch $namespace skipped. Patch was already applied?</comment>");
         return null;
     }
 
-    protected function beforeApply()
-    {}
-
-    protected function afterApply($patchingWasSuccessful)
-    {}
-
     /**
-     * @return string
+     * @throws ProcessFailedException
+     * @return boolean
      */
-    public function getNamespace()
+    protected function doApply()
     {
-        return $this->getGroup() . '/' . $this->getName();
+        $patchPath = ProcessUtils::escapeArgument($this->fileInfo->getRealPath());
+        $process = new Process("patch -p 1 < $patchPath");
+        $process->mustRun();
+        return $process->getExitCode() === 0;
     }
 
     /**
-     * @return string
+     * @return bool
      */
-    public function getGroup()
+    protected function canApply()
     {
-        return $this->group;
-    }
-
-    /**
-     * @param string $group
-     */
-    protected function setGroup($group)
-    {
-        $this->group = $group;
-    }
-
-    /**
-     * @return string
-     */
-    public function getName()
-    {
-        return $this->name;
-    }
-
-    /**
-     * @param string $name
-     */
-    protected function setName($name)
-    {
-        $this->name = $name;
-    }
-
-    /**
-     * @return string
-     */
-    public function getTitle()
-    {
-        return $this->title;
-    }
-
-    /**
-     * @param string $title
-     */
-    protected function setTitle($title)
-    {
-        $this->title = $title;
-    }
-
-    /**
-     * @return string
-     */
-    public function getDescription()
-    {
-        return $this->description;
-    }
-
-    /**
-     * @param string $description
-     */
-    protected function setDescription($description)
-    {
-        $this->description = $description;
-    }
-
-    /**
-     * @return string
-     */
-    public function getUrl()
-    {
-        return $this->url;
-    }
-
-    /**
-     * @param string $url
-     */
-    protected function setUrl($url)
-    {
-        $this->url = $url;
-    }
-
-    /**
-     * @return string
-     * @throws \Exception
-     */
-    protected function getPatchTemporaryPath()
-    {
-        if (is_null($this->tempPatchFilePath)) {
-            $this->getOutput()->writeln("<info>Fetching patch {$this->getNamespace()}</info>");
-
-            if (!$this->getUrl()) {
-                return $this->tempPatchFilePath = '';
-            }
-
-            if (!$patch = file_get_contents($this->getUrl())) {
-                throw new \Exception("Could not get contents from {$this->getUrl()}");
-            }
-
-            $patchFilePath = $this->getPatchTempAbsolutePath();
-            if (!file_put_contents($patchFilePath, $patch)) {
-                throw new \Exception("Could not save patch content to $patchFilePath");
-            }
-
-            $this->tempPatchFilePath = $patchFilePath;
+        $patchPath = ProcessUtils::escapeArgument($this->fileInfo->getRealPath());
+        $process = new Process("patch --dry-run -p 1 < $patchPath");
+        try {
+            $process->mustRun();
+            return $process->getExitCode() === 0;
+        } catch (\Exception $e) {
+            $this->getOutput()->writeln("<comment>Patch {$this->fileInfo->getFilename()} skipped. Dry-run response was:</comment>");
+            $this->getOutput()->writeln("<comment>{$e->getMessage()}</comment>");
+            return false;
         }
-
-        return $this->tempPatchFilePath;
-    }
-
-    /**
-     * @return string
-     */
-    private function getPatchTempAbsolutePath()
-    {
-        // digest unsafe characters
-        return sys_get_temp_dir() . '/mage_patch_' . md5($this->getGroup() . $this->getName()) . '.tmp';
     }
 
     /**
@@ -225,21 +96,5 @@ abstract class Patch
     public function setOutput(Output $output)
     {
         $this->output = $output;
-    }
-
-    /**
-     * @return Output
-     */
-    public function getComposerExtra()
-    {
-        return $this->composerExtra;
-    }
-
-    /**
-     * @param array $composerExtra
-     */
-    private function setComposerExtra(array $composerExtra)
-    {
-        $this->composerExtra = $composerExtra;
     }
 }
