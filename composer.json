@@ -2,7 +2,7 @@
     "name": "jamescowie/composer-patcher",
     "description": "Apply patches using composer",
     "license": "MIT",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "authors": [
         {
             "name": "jamescowie",
@@ -10,13 +10,18 @@
         }
     ],
     "require": {
-      "symfony/console": "~2.6.0||~2.8.0",
-      "symfony/finder": "~2.5.0||~2.7.0||~3.0.0",
-      "symfony/process": "*"
+      "symfony/console": "~2.3, !=2.7.0||~3.0||~4.0",
+      "symfony/finder": "~2.3||~3.0||~4.0",
+      "symfony/process": "*",
+      "composer/composer": "~1.0"
+    },
+    "require-dev": {
+      "phpunit/phpunit": "~6.5.0"
     },
     "autoload": {
         "psr-0": {
-          "Inviqa\\": "src/"
+          "Inviqa\\": "src/",
+          "Inviqa\\Test\\": "test/"
         }
     }
 }

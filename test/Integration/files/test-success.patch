@@ -1,0 +1,8 @@
+index 2ef8554..f915028 100644
+--- a/test/Integration/files/patch-target.txt
++++ b/test/Integration/files/patch-target.txt
+@@ -1,4 +1,3 @@
+-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam varius convallis
+ bibendum. Cras faucibus egestas libero nec molestie. Vivamus in nulla rhoncus,
+ dictum velit ac, sodales ante. Sed faucibus laoreet libero consequat feugiat. In
+ eu diam sit amet diam malesuada finibus vitae at massa. Duis eget lectus non
