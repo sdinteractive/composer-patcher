@@ -1,0 +1,28 @@
+sudo: required
+dist: trusty
+group: edge
+language: php
+env:
+  global:
+    - COMPOSER_BIN_DIR=~/bin
+matrix:
+  include:
+    - php: 7.0
+      env: MAGENTO_VERSION=~2.0.0
+    - php: 7.0
+      env: MAGENTO_VERSION=~2.1.0
+    - php: 7.0
+      env: MAGENTO_VERSION=~2.2.0
+    - php: 7.1
+      env: MAGENTO_VERSION=~2.2.0
+cache:
+  apt: true
+  directories:
+    - "$HOME/.composer/cache"
+script:
+  - composer config http-basic.repo.magento.com $MAGENTO_PUBLIC $MAGENTO_PRIVATE --global
+  - composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition:$MAGENTO_VERSION magento
+  - cd magento
+  - composer config repositories.travis_to_test git https://github.com/$TRAVIS_REPO_SLUG.git
+  - composer config minimum-stability dev
+  - composer require jamescowie/composer-patcher dev-$TRAVIS_BRANCH#$TRAVIS_COMMIT
