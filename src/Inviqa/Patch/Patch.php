@@ -36,7 +36,7 @@ class Patch
      */
     final public function apply()
     {
-        if ($this->canApply()) {
+        if (!$this->isApplied() && $this->canApply()) {
             $res = (bool)$this->doApply();
 
             if ($res) {
@@ -74,6 +74,28 @@ class Patch
             return $process->getExitCode() === 0;
         } catch (\Exception $e) {
             $this->getOutput()->writeln("<comment>Patch {$this->fileInfo->getFilename()} skipped. Dry-run response was:</comment>");
+            $this->getOutput()->writeln("<comment>{$e->getMessage()}</comment>");
+            return false;
+        }
+    }
+
+    /**
+     * @return bool
+     */
+    protected function isApplied()
+    {
+        $patchPath = ProcessUtils::escapeArgument($this->fileInfo->getRealPath());
+        $process = new Process("patch --dry-run -p 1 -R < $patchPath");
+        try {
+            $process->mustRun();
+            $result = $process->getExitCode() === 0;
+
+            if ($result) {
+                $this->getOutput()->writeln("<info>Patch {$this->fileInfo->getFilename()} already applied.</info>");
+            }
+
+            return $result;
+        } catch (\Exception $e) {
             $this->getOutput()->writeln("<comment>{$e->getMessage()}</comment>");
             return false;
         }
