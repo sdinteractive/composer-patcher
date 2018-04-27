@@ -96,7 +96,7 @@ class Patch
 
             return $result;
         } catch (\Exception $e) {
-            $this->getOutput()->writeln("<comment>{$e->getMessage()}</comment>");
+            // Ignore errors on the reverse, since it probably means it wasn't applied.
             return false;
         }
     }
