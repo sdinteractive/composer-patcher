@@ -56,8 +56,8 @@ class Patch
      */
     protected function doApply()
     {
-        $patchPath = ProcessUtils::escapeArgument($this->fileInfo->getRealPath());
-        $process = new Process("patch -p 1 < $patchPath");
+        $patchPath = escapeshellarg($this->fileInfo->getRealPath());
+        $process = Process::fromShellCommandline("patch -p 1 < $patchPath");
         $process->mustRun();
         return $process->getExitCode() === 0;
     }
@@ -67,8 +67,8 @@ class Patch
      */
     protected function canApply()
     {
-        $patchPath = ProcessUtils::escapeArgument($this->fileInfo->getRealPath());
-        $process = new Process("patch --dry-run -p 1 < $patchPath");
+        $patchPath = escapeshellarg($this->fileInfo->getRealPath());
+        $process = Process::fromShellCommandline("patch --dry-run -p 1 < $patchPath");
         try {
             $process->mustRun();
             return $process->getExitCode() === 0;
@@ -84,8 +84,8 @@ class Patch
      */
     protected function isApplied()
     {
-        $patchPath = ProcessUtils::escapeArgument($this->fileInfo->getRealPath());
-        $process = new Process("patch --dry-run -p 1 -R < $patchPath");
+        $patchPath = escapeshellarg($this->fileInfo->getRealPath());
+        $process = Process::fromShellCommandline("patch --dry-run -p 1 -R < $patchPath");
         try {
             $process->mustRun();
             $result = $process->getExitCode() === 0;

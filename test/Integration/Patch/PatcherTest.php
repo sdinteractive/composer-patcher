@@ -30,8 +30,8 @@ class PatchTest extends TestCase
             return;
         }
 
-        $patchPath = ProcessUtils::escapeArgument($this->fileInfo->getRealPath());
-        $process = new Process("patch -p 1 -R < $patchPath");
+        $patchPath = escapeshellarg($this->fileInfo->getRealPath());
+        $process = Process::fromShellCommandline("patch -p 1 -R < $patchPath");
         $process->mustRun();
     }
 
