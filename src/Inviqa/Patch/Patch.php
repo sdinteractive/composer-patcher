@@ -57,7 +57,7 @@ class Patch
     protected function doApply()
     {
         $patchPath = escapeshellarg($this->fileInfo->getRealPath());
-        $process = Process::fromShellCommandline("patch -p 1 < $patchPath");
+        $process = $this->fromShellCommandline("patch -p 1 < $patchPath");
         $process->mustRun();
         return $process->getExitCode() === 0;
     }
@@ -68,7 +68,7 @@ class Patch
     protected function canApply()
     {
         $patchPath = escapeshellarg($this->fileInfo->getRealPath());
-        $process = Process::fromShellCommandline("patch --dry-run -p 1 < $patchPath");
+        $process = $this->fromShellCommandline("patch --dry-run -p 1 < $patchPath");
         try {
             $process->mustRun();
             return $process->getExitCode() === 0;
@@ -85,7 +85,7 @@ class Patch
     protected function isApplied()
     {
         $patchPath = escapeshellarg($this->fileInfo->getRealPath());
-        $process = Process::fromShellCommandline("patch --dry-run -p 1 -R < $patchPath");
+        $process = $this->fromShellCommandline("patch --dry-run -p 1 -R < $patchPath");
         try {
             $process->mustRun();
             $result = $process->getExitCode() === 0;
@@ -99,6 +99,20 @@ class Patch
             // Ignore errors on the reverse, since it probably means it wasn't applied.
             return false;
         }
+    }
+
+    /**
+     * @process string $cmd Command to execute.
+     * @return Process
+     */
+    protected function fromShellCommandline($cmd)
+    {
+        // Newer Symfony/Process versions use Process::fromShellCommandline().
+        // We have to support both because Composer uses an ancient one bundled in the phar.
+        if (is_callable([Process::class, 'fromShellCommandline'])) {
+            return Process::fromShellCommandline($cmd);
+        }
+        return new Process($cmd);
     }
 
     /**

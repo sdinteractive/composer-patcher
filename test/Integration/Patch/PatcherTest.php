@@ -31,7 +31,11 @@ class PatchTest extends TestCase
         }
 
         $patchPath = escapeshellarg($this->fileInfo->getRealPath());
-        $process = Process::fromShellCommandline("patch -p 1 -R < $patchPath");
+        if (is_callable([Process::class, 'fromShellCommandline'])) {
+            $process = Process::fromShellCommandline("patch -p 1 -R < $patchPath");
+        } else {
+            $process = new Process("patch -p 1 -R < $patchPath");
+        }
         $process->mustRun();
     }
 
