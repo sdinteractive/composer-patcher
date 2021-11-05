@@ -102,7 +102,7 @@ class Patch
     }
 
     /**
-     * @process string $cmd Command to execute.
+     * @param string $cmd Command to execute.
      * @return Process
      */
     protected function fromShellCommandline($cmd)
