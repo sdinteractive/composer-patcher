@@ -2,7 +2,7 @@
     "name": "jamescowie/composer-patcher",
     "description": "Apply patches using composer",
     "license": "MIT",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "authors": [
         {
             "name": "jamescowie",
@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-      "symfony/console": "~2.3, !=2.7.0||~3.0||~4.0",
+      "symfony/console": "~2.3, !=2.7.0||~3.0||~4.0||~5.0",
       "symfony/finder": "~2.3||~3.0||~4.0||~5.0",
       "symfony/process": "~4.2||~5.0",
       "composer/composer": "~1.0||~2.0"
